@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iglesia CFC Renca</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --bg:#0b0b0c;
+    --bg2:#141416;
+    --card:#1b1b1e;
+    --card2:#222226;
+    --line:#2c2c30;
+    --white:#f5f5f5;
+    --gray:#9a9a9f;
+    --gray-dim:#6b6b70;
+    --accent:#e8e8ea;
+    --danger:#c0524a;
+    --ok:#5a8a6b;
+    --highlight:#ffb648;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(circle at 50% 0%, #1a1a1d 0%, #0b0b0c 60%);
+    color:var(--white);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:520px;margin:0 auto;padding-bottom:90px;min-height:100vh;position:relative;}
+
+  /* HEADER */
+  .header{
+    display:flex;align-items:center;gap:12px;
+    padding:18px 16px 14px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#151517,#0e0e10);
+  }
+  .header img{width:46px;height:46px;border-radius:50%;border:1px solid #333;}
+  .header .htxt h1{font-size:16px;margin:0;letter-spacing:.5px;font-weight:700;}
+  .header .htxt p{margin:2px 0 0;font-size:11px;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;}
+  .header .badge{margin-left:auto;font-size:10px;color:var(--gray-dim);border:1px solid var(--line);padding:4px 8px;border-radius:20px;}
+
+  /* SETUP SCREEN */
+  .setup-wrap{padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .setup-wrap img{width:90px;height:90px;border-radius:50%;margin-bottom:18px;border:1px solid #333;}
+  .setup-wrap h2{font-size:20px;margin:0 0 6px;}
+  .setup-wrap p{color:var(--gray);font-size:13px;line-height:1.5;margin:0 0 24px;max-width:340px;}
+  .field{width:100%;max-width:340px;text-align:left;margin-bottom:14px;}
+  .field label{display:block;font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  input,select,textarea{
+    width:100%;background:var(--card);border:1px solid var(--line);color:var(--white);
+    padding:12px 14px;border-radius:10px;font-size:14px;outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:#555;}
+  textarea{resize:vertical;min-height:60px;font-family:inherit;}
+  .btn{
+    width:100%;max-width:340px;padding:13px;border-radius:10px;border:none;
+    background:var(--white);color:#111;font-weight:700;font-size:14px;letter-spacing:.3px;
+    cursor:pointer;margin-top:6px;transition:opacity .15s;
+  }
+  .btn:active{opacity:.7;}
+  .btn-outline{background:transparent;border:1px solid var(--line);color:var(--white);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-sm{width:auto;padding:8px 14px;font-size:12px;}
+  .error-msg{color:var(--danger);font-size:12px;margin-top:8px;}
+  .hint{font-size:11px;color:var(--gray-dim);margin-top:8px;max-width:340px;}
+
+  /* TABS */
+  .tabbar{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:100%;max-width:520px;
+    display:flex;justify-content:space-around;
+    background:rgba(15,15,17,.97);backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+    z-index:50;
+  }
+  .tab-btn{
+    background:none;border:none;color:var(--gray-dim);font-size:9.5px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 4px;cursor:pointer;flex:1;letter-spacing:.2px;
+  }
+  .tab-btn .ic{font-size:18px;}
+  .tab-btn.active{color:var(--white);}
+
+  /* CONTENT */
+  .view{padding:16px;display:none;animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-title{
+    font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);
+    margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .section-title:first-child{margin-top:0;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:10px;
+  }
+  .item-row{
+    display:flex;gap:10px;align-items:flex-start;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .item-row:last-child{border-bottom:none;}
+  .time-chip{
+    background:var(--card2);border:1px solid var(--line);border-radius:8px;
+    padding:5px 8px;font-size:11px;font-weight:700;min-width:46px;text-align:center;color:var(--white);
+    white-space:nowrap;
+  }
+  .item-body{flex:1;}
+  .item-title{font-size:14px;font-weight:700;margin:0 0 2px;}
+  .item-resp{font-size:11.5px;color:var(--gray);margin:0 0 4px;}
+  .item-notes{font-size:12px;color:var(--gray-dim);margin:0;line-height:1.4;white-space:pre-line;}
+
+  /* ─── ROLE CARD: diseño imagen 2 ─── */
+  .role-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    margin-bottom:12px;overflow:hidden;
+  }
+  .role-head{
+    padding:13px 16px;font-size:14px;font-weight:800;text-transform:uppercase;
+    letter-spacing:1.2px;background:#252528;color:var(--white);
+    border-bottom:1px solid var(--line);
+  }
+  .role-line{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 16px;border-top:1px solid var(--line);font-size:13.5px;
+  }
+  .role-line .rol{color:var(--gray);font-size:12px;}
+  .role-line .nom{font-weight:700;}
+
+  .aviso-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;margin-bottom:8px;font-size:13.5px;line-height:1.45;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .aviso-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0;}
+
+  .act-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:10px;
+  }
+  .act-date{
+    display:inline-block;background:var(--card2);border:1px solid var(--line);
+    font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;margin-bottom:8px;color:var(--white);
+  }
+  .act-title{font-size:14.5px;font-weight:700;margin:0 0 4px;}
+  .act-note{font-size:12.5px;color:var(--gray);margin:0;line-height:1.4;white-space:pre-line;}
+
+  .empty{
+    text-align:center;color:var(--gray-dim);font-size:13px;padding:40px 10px;
+  }
+
+  /* lock screen */
+  .lock-wrap{padding:50px 24px;text-align:center;}
+  .lock-wrap .ic{font-size:34px;margin-bottom:14px;}
+  .lock-wrap h3{margin:0 0 6px;font-size:17px;}
+  .lock-wrap p{color:var(--gray);font-size:13px;margin:0 0 20px;}
+  .pin-dots{display:flex;gap:10px;justify-content:center;margin:18px 0;}
+  .pin-dots span{width:11px;height:11px;border-radius:50%;border:1px solid var(--gray-dim);}
+  .pin-dots span.filled{background:var(--white);border-color:var(--white);}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto;}
+  .keypad button{
+    background:var(--card);border:1px solid var(--line);color:var(--white);
+    font-size:18px;padding:16px 0;border-radius:50%;cursor:pointer;
+  }
+  .keypad button:active{background:var(--card2);}
+  .keypad .ghost{background:none;border:none;}
+
+  /* admin */
+  .admin-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .admin-bar h2{font-size:16px;margin:0;}
+  .small-link{font-size:11px;color:var(--gray);text-decoration:underline;cursor:pointer;background:none;border:none;}
+  .form-grid{display:grid;gap:10px;margin-bottom:12px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .admin-item{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;
+  }
+  .admin-item-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+  .iconbtn{
+    background:var(--card2);border:1px solid var(--line);color:var(--gray);
+    width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;
+  }
+  .iconbtn.del{color:#d98a84;}
+  .tag{
+    display:inline-block;font-size:10px;background:var(--card2);border:1px solid var(--line);
+    padding:2px 7px;border-radius:6px;color:var(--gray);margin-bottom:4px;
+  }
+  .subtabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;}
+  .subtab{
+    background:var(--card);border:1px solid var(--line);color:var(--gray);
+    padding:7px 13px;border-radius:20px;font-size:12px;white-space:nowrap;cursor:pointer;
+  }
+  .subtab.active{background:var(--white);color:#111;border-color:var(--white);font-weight:700;}
+
+  .toast{
+    position:fixed;bottom:96px;left:50%;transform:translateX(-50%);
+    background:var(--white);color:#111;padding:10px 18px;border-radius:30px;
+    font-size:12.5px;font-weight:600;z-index:200;opacity:0;pointer-events:none;
+    transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  .loading-screen{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100vh;gap:14px;
+  }
+  .spinner{
+    width:30px;height:30px;border-radius:50%;border:2px solid var(--line);
+    border-top-color:var(--white);animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;
+    display:flex;align-items:flex-end;justify-content:center;
+  }
+  .modal{
+    background:var(--bg2);width:100%;max-width:520px;border-radius:18px 18px 0 0;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+    max-height:85vh;overflow-y:auto;border-top:1px solid var(--line);
+  }
+  .modal h3{margin:0 0 14px;font-size:15px;}
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .modal-actions .btn{margin-top:0;}
+
+  .gray-pill{font-size:10.5px;color:var(--gray-dim);text-align:center;margin-top:14px;}
+
+  /* zonas / chips de servidores */
+  .chip-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--card2);border:1px solid var(--line);border-radius:20px;
+    padding:5px 8px 5px 11px;font-size:12px;color:var(--white);
+  }
+  .chip-x{
+    background:none;border:none;color:var(--gray-dim);cursor:pointer;
+    font-size:10px;width:18px;height:18px;border-radius:50%;padding:0;
+  }
+  .chip-x:active{background:var(--line);}
+  .zona-card .role-head{display:flex;}
+
+  /* búsqueda calendario */
+  .search-box{margin-bottom:12px;}
+
+  /* calendario de turnos mensuales */
+  .day-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:10px;
+  }
+  .day-title{font-size:13px;font-weight:700;text-transform:capitalize;margin:0 0 8px;color:var(--white);
+    background:var(--card2);display:inline-block;padding:4px 10px;border-radius:8px;border:1px solid var(--line);}
+  .day-zona{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-dim);margin:10px 0 4px;}
+  .day-zona:first-of-type{margin-top:0;}
+  .day-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 6px;border-radius:8px;}
+  .day-line.me{background:rgba(255,182,72,.22);border:1px solid rgba(255,182,72,.55);}
+  .day-line.me .nom{color:var(--highlight);}
+
+  /* icono del selector de fecha/mes nativo, más visible sobre fondo oscuro */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator{
+    filter: invert(70%) sepia(54%) saturate(900%) hue-rotate(335deg) brightness(105%) contrast(101%);
+    cursor:pointer;
+    padding:4px;
+    border-radius:4px;
+  }
+  .day-line .nom{font-weight:600;}
+  .week-sep{
+    display:flex;align-items:center;gap:10px;margin:18px 0 8px;
+  }
+  .week-sep:first-child{margin-top:0;}
+  .week-sep .line{flex:1;height:1px;background:var(--line);}
+  .week-sep .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray-dim);white-space:nowrap;}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="root" class="loading-screen">
+    <div class="spinner"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============== LOGO ============== */
+const LOGO_SRC = "data:image/png;base64,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";
+
+/* ============== STORAGE HELPERS (local device config) ============== */
+async function localGet(key){
+  try{ const r = await window.storage.get(key,false); return r?JSON.parse(r.value):null; }catch(e){ return null; }
+}
+async function localSet(key,val){
+  try{ await window.storage.set(key, JSON.stringify(val), false); }catch(e){}
+}
+
+/* ============== STATE ============== */
+let db = null;
+let firebaseApp = null;
+let isAdmin = false;
+let isLeader = false;
+let isLeaderMaster = false;
+let currentLeaderName = '';
+let currentLeaderZonas = [];
+let liderSub = 'zonas';
+let cfg = { url:'', pin:'' };
+let SEED_DATA = {"programa": {"preparacion": [{"hora": "9:30", "tiempo": "0:30", "actividad": "Llegada y preparación instalaciones", "responsable": "Todos", "comentarios": "Revisar las instalaciones, orden de sillas, limpieza del salón.\nÁreas: Adoradores, Multimedia, Audio, Consolidación, Ujieres, CFC Kids and Teens, Sacerdotes, Finanzas"}, {"hora": "10:00", "tiempo": "0:40", "actividad": "Pruebas de sonido", "responsable": "Adoradores", "comentarios": "Servidores en sus áreas"}, {"hora": "10:40", "tiempo": "0:10", "actividad": "Últimos ajustes", "responsable": "Todos", "comentarios": "Cada área en oración para iniciar el culto.\nProcurar tener todos los elementos para su servicio."}, {"hora": "10:50", "tiempo": "0:05", "actividad": "Oración por área, ubicación de los hermanos", "responsable": "Todos", "comentarios": "Recepción de hermanos y la ubicación continuará hasta el inicio del culto"}, {"hora": "10:55", "tiempo": "0:05", "actividad": "Tomar posiciones", "responsable": "Todos", "comentarios": "Ubicarse en posiciones para iniciar la reunión.\nAdoradores dar recomendaciones de ubicación y silenciar teléfonos"}], "reunion": [{"hora": "11:00", "tiempo": "0:05", "actividad": "Bienvenida y oración", "responsable": "Adoradores", "comentarios": "Acompañando con música"}, {"hora": "11:05", "tiempo": "0:35", "actividad": "Alabanzas (Bloque 1: 6 alab)", "responsable": "Adoradores", "comentarios": "Ministración Alabanzas:\nTe doy Gloria\nEl poder de tu amor\nLa bondad de Dios\nTu y solo tu\nAmamos tanto tu presencia\nCristo yo te amo"}, {"hora": "11:40", "tiempo": "0:05", "actividad": "Ingreso niños a CFC Kids", "responsable": "Multimedia", "comentarios": "Multimedia atento al anuncio en pantalla. Ujieres abren puertas y acompañan a los niños a CFC Kids"}, {"hora": "11:45", "tiempo": "0:10", "actividad": "Avisos (VIDEO)", "responsable": "Multimedia", "comentarios": "Multimedia y coordinación atentos"}, {"hora": "11:55", "tiempo": "0:45", "actividad": "Predicación", "responsable": "Pastor Luis", "comentarios": "Música de fondo, acompañar. Multimedia indicar pasar CFC Kids"}, {"hora": "12:40", "tiempo": "0:15", "actividad": "Ministración (Bloque 2)", "responsable": "Pastor Luis", "comentarios": "Alabanza ministración: por definir"}, {"hora": "12:55", "tiempo": "0:05", "actividad": "Bienvenida", "responsable": "Pastor", "comentarios": "Equipo oración bienvenida atentos"}, {"hora": "13:00", "tiempo": "0:10", "actividad": "Tiempo de siembra (ofrendas y diezmos) (Bloque 3)", "responsable": "María San Martín", "comentarios": "Adoradores cantan: Los muros caerán / Hay libertad"}, {"hora": "13:10", "tiempo": "0:05", "actividad": "Oración de Gratitud y cierre", "responsable": "Adoradores", "comentarios": "Acompañando con música"}]}, "turnos": [{"area": "Ujieres", "rol": "Bienvenida entrada 1", "nombre": "Ruben Lozano"}, {"area": "Ujieres", "rol": "Bienvenida entrada 2", "nombre": "Marco Painecura"}, {"area": "Ujieres", "rol": "Recibe y acomoda lado derecho", "nombre": "Nolfa Liempi"}, {"area": "Ujieres", "rol": "Recibe y acomoda lado izquierdo", "nombre": "Macarena Carrasco"}, {"area": "Adoradores", "rol": "Guitarra y voz", "nombre": "Diego Espinoza"}, {"area": "Adoradores", "rol": "Voces", "nombre": "Adoradores"}, {"area": "Adoradores", "rol": "Batería", "nombre": "Daniel Henriquez"}, {"area": "Adoradores", "rol": "Bajo y voz", "nombre": "Igor Galaz"}, {"area": "Adoradores", "rol": "Guitarra eléctrica", "nombre": "Samuel Cayuqueo"}, {"area": "Multimedia y Audio", "rol": "Letras", "nombre": "Valentina Rivarola"}, {"area": "Multimedia y Audio", "rol": "Cámara y controles", "nombre": "Abigail Cayuqueo"}, {"area": "Multimedia y Audio", "rol": "RRSS", "nombre": "Abigail Cayuqueo"}, {"area": "CFC Kids", "rol": "Maestro Kids", "nombre": "José Rivarola"}, {"area": "CFC Kids", "rol": "Maestro y monitor Teens", "nombre": "Marcela y Tamara"}, {"area": "Consolidación", "rol": "Preparación compartir y recepción", "nombre": "Trinidad, Manuel, Yariany, Jhon"}, {"area": "Finanzas", "rol": "Gestión y Control", "nombre": "María San Martin"}, {"area": "Sacerdotes", "rol": "Limpieza Auditorio, baños y salas", "nombre": "Sacerdotes"}, {"area": "Escuderos", "rol": "Escuderos", "nombre": "Wilson y Camila"}, {"area": "Oración Bienvenida", "rol": "Equipo oración bienvenida", "nombre": "David, Stephanie, Katty Painecura, Katty Padilla, Polo, Marcela"}], "avisos": ["Miércoles de Gloria — 20:00 Hrs", "Congreso de Jóvenes — 26 y 27 de junio, Casa Central Pedro Mira 443", "Bautismos — 28 de Junio"], "actividades": [], "lideres": {"reuniones": []}, "config": {"churchName": "Iglesia CFC Renca", "accessPin": "1234", "leaderPin": "1234", "pin": "1234"}};
+/* ---- Zonas / líderes por zona / turno mensual (nuevo) ---- */
+SEED_DATA.config.pastoresBase = SEED_DATA.config.pastoresBase || "Pastores Luis Osses y Susana Martínez";
+SEED_DATA.config.diasTurnoDefault = SEED_DATA.config.diasTurnoDefault || [0,3]; // 0=domingo, 3=miércoles
+SEED_DATA.lideresCuentas = SEED_DATA.lideresCuentas || [];
+SEED_DATA.turnosMes = SEED_DATA.turnosMes || {};
+SEED_DATA.predicadores = SEED_DATA.predicadores || ["Pastor Luis Osses"];
+SEED_DATA.sloganMes = SEED_DATA.sloganMes || {};
+SEED_DATA.fechaPrograma = SEED_DATA.fechaPrograma || "";
+SEED_DATA.multimediaRRSS = SEED_DATA.multimediaRRSS || {};
+SEED_DATA.predicadoresTurnos = SEED_DATA.predicadoresTurnos || {};
+SEED_DATA.zonas = SEED_DATA.zonas || [
+  { id:'ujieres', nombre:'Ujieres', roles:['Bienvenida entrada 1','Bienvenida entrada 2','Recibe y acomoda lado derecho','Recibe y acomoda lado izquierdo'],
+    servidores:['Ruben Lozano','Marco Painecura','Nolfa Liempi','Macarena Carrasco'] },
+  { id:'adoradores', nombre:'Adoradores', roles:['Guitarra y voz','Voces','Batería','Bajo y voz','Guitarra eléctrica'],
+    servidores:['Diego Espinoza','Daniel Henriquez','Igor Galaz','Samuel Cayuqueo'] },
+  { id:'multimedia', nombre:'Multimedia y Audio', roles:['Letras','Cámara y controles','RRSS'],
+    servidores:['Valentina Rivarola','Abigail Cayuqueo'] },
+  { id:'kids', nombre:'CFC Kids', roles:['Maestro Kids','Maestro y monitor Teens'],
+    servidores:['José Rivarola','Marcela','Tamara'] },
+  { id:'consolidacion', nombre:'Consolidación', roles:['Preparación compartir y recepción'],
+    servidores:['Trinidad','Manuel','Yariany','Jhon'] },
+  { id:'finanzas', nombre:'Finanzas', roles:['Gestión y Control'],
+    servidores:['María San Martín'] },
+  { id:'sacerdotes', nombre:'Sacerdotes', roles:['Limpieza Auditorio, baños y salas'],
+    servidores:['Sacerdotes'] },
+  { id:'escuderos', nombre:'Escuderos', roles:['Escuderos'],
+    servidores:['Wilson','Camila'] },
+  { id:'oracion', nombre:'Oración Bienvenida', roles:['Equipo oración bienvenida'],
+    servidores:['David','Stephanie','Katty Painecura','Katty Padilla','Polo','Marcela'] },
+];
+
+let DATA = JSON.parse(JSON.stringify(SEED_DATA));
+let currentTab = 'programa';
+let progSub = 'reunion';
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ============== INIT ============== */
+const DEFAULT_FIREBASE_URL = "https://cfc-renca-default-rtdb.firebaseio.com";
+
+window.addEventListener('DOMContentLoaded', init);
+
+async function init(){
+  const saved = await localGet('firebase-config');
+  if(saved && saved.url){
+    cfg = saved;
+    connectFirebase(cfg.url, ()=> gateAccess());
+  } else if(DEFAULT_FIREBASE_URL){
+    cfg = { url: DEFAULT_FIREBASE_URL, pin: '' };
+    connectFirebase(cfg.url, ()=> gateAccess());
+  } else {
+    renderSetup();
+  }
+}
+
+function connectFirebase(url, onReady){
+  try{
+    if(firebaseApp){ try{ firebase.app().delete(); }catch(e){} }
+    firebaseApp = firebase.initializeApp({ databaseURL: url });
+    db = firebase.database();
+    db.ref('/').once('value').then(snap=>{
+      const val = snap.val();
+      if(val){
+        DATA.programa = val.programa || DATA.programa;
+        DATA.turnos = val.turnos || [];
+        DATA.avisos = val.avisos || [];
+        DATA.actividades = val.actividades || [];
+        DATA.lideres = val.lideres || { reuniones: [] };
+        DATA.config = Object.assign({}, DATA.config, val.config || {});
+        DATA.zonas = val.zonas || SEED_DATA.zonas;
+        DATA.lideresCuentas = val.lideresCuentas || [];
+        DATA.turnosMes = val.turnosMes || {};
+        DATA.predicadores = val.predicadores || ["Pastor Luis Osses"];
+        DATA.sloganMes = val.sloganMes || {};
+        DATA.fechaPrograma = val.fechaPrograma || "";
+        DATA.multimediaRRSS = val.multimediaRRSS || {};
+        DATA.predicadoresTurnos = val.predicadoresTurnos || {};
+      } else {
+        db.ref('/').set(SEED_DATA);
+      }
+      db.ref('/').on('value', snap2=>{
+        const v = snap2.val();
+        if(!v) return;
+        DATA.programa = v.programa || DATA.programa;
+        DATA.turnos = v.turnos || [];
+        DATA.avisos = v.avisos || [];
+        DATA.actividades = v.actividades || [];
+        DATA.lideres = v.lideres || { reuniones: [] };
+        DATA.config = Object.assign({}, DATA.config, v.config || {});
+        DATA.zonas = v.zonas || DATA.zonas;
+        DATA.lideresCuentas = v.lideresCuentas || [];
+        DATA.turnosMes = v.turnosMes || {};
+        DATA.predicadores = v.predicadores || ["Pastor Luis Osses"];
+        DATA.sloganMes = v.sloganMes || {};
+        DATA.fechaPrograma = v.fechaPrograma || "";
+        DATA.multimediaRRSS = v.multimediaRRSS || {};
+        DATA.predicadoresTurnos = v.predicadoresTurnos || {};
+        if(document.getElementById('root') && currentTab) renderTab(currentTab);
+      });
+      onReady();
+    }).catch(err=>{
+      console.error(err);
+      renderSetup("No se pudo conectar a esa URL de Firebase. Verifica que esté bien escrita.");
+    });
+  }catch(e){
+    renderSetup("URL de Firebase inválida.");
+  }
+}
+
+/* ============== SETUP SCREEN ============== */
+function renderSetup(errorMsg){
+  const root = document.getElementById('root');
+  root.className = '';
+  root.innerHTML = `
+    <div class="setup-wrap">
+      <img src="${LOGO_SRC}" alt="logo">
+      <h2>Iglesia CFC Renca</h2>
+      <p>Conecta la app a la base de datos de la iglesia para ver el programa, los turnos y los avisos.</p>
+      <div class="field">
+        <label>URL de Firebase</label>
+        <input id="in-url" placeholder="https://tu-proyecto-default-rtdb.firebaseio.com" value="${cfg.url||''}">
+      </div>
+      <div class="field">
+        <label>PIN de administrador (4 dígitos)</label>
+        <input id="in-pin" type="tel" maxlength="4" placeholder="1234" value="${cfg.pin||''}">
+      </div>
+      <button class="btn" id="btn-connect">Guardar y conectar</button>
+      ${errorMsg? `<p class="error-msg">${errorMsg}</p>`:''}
+      <p class="hint">El PIN se usará para entrar a editar el programa, los turnos y los avisos desde la app. Si la base de datos ya tiene un PIN guardado, ese será el que valga.</p>
+    </div>
+  `;
+  document.getElementById('btn-connect').onclick = async ()=>{
+    const url = document.getElementById('in-url').value.trim();
+    const pin = document.getElementById('in-pin').value.trim() || '1234';
+    if(!url){ toast('Ingresa la URL de Firebase'); return; }
+    cfg = { url, pin };
+    await localSet('firebase-config', cfg);
+    root.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+    root.className = 'loading-screen';
+    connectFirebase(url, ()=> renderShell());
+  };
+}
+
+/* ============== ACCESS GATE ============== */
+let accessGranted = false;
+
+async function gateAccess(){
+  const unlocked = await localGet('access-unlocked');
+  if(unlocked === true){
+    accessGranted = true;
+    renderShell();
+    return;
+  }
+  renderAccessGate();
+}
+
+function renderAccessGate(errorShake){
+  const root = document.getElementById('root');
+  root.className = '';
+  root.innerHTML = `
+    <div class="lock-wrap">
+      <img src="${LOGO_SRC}" style="width:74px;height:74px;border-radius:50%;margin-bottom:16px;border:1px solid #333;">
+      <h3>${DATA.config.churchName || 'Iglesia CFC Renca'}</h3>
+      <p>Ingresa la clave para entrar a la app.</p>
+      <div class="pin-dots" id="pin-dots">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="keypad" id="keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}">${n}</button>`).join('')}
+        <button class="ghost"></button>
+        <button data-n="0">0</button>
+        <button data-n="back">⌫</button>
+      </div>
+    </div>
+  `;
+  bindLockKeypad(root, async (pin)=>{
+    if(pin === (DATA.config.accessPin || '1234')){
+      accessGranted = true;
+      await localSet('access-unlocked', true);
+      renderShell();
+    } else {
+      toast('Clave incorrecta');
+    }
+  });
+}
+
+/* ============== SHELL (tabs) ============== */
+function renderShell(){
+  const root = document.getElementById('root');
+  root.className = '';
+  root.innerHTML = `
+    <div class="header">
+      <img src="${LOGO_SRC}">
+      <div class="htxt">
+        <h1>${DATA.config.churchName || 'Iglesia CFC Renca'}</h1>
+        <p>SERVIR ES UNA HONRA</p>
+      </div>
+      <div class="badge" id="conn-badge">● conectado</div>
+    </div>
+
+    <div id="view-programa" class="view"></div>
+    <div id="view-turnos" class="view"></div>
+    <div id="view-avisos" class="view"></div>
+    <div id="view-actividades" class="view"></div>
+    <div id="view-lideres" class="view"></div>
+    <div id="view-admin" class="view"></div>
+
+    <div class="tabbar">
+      <button class="tab-btn" data-tab="programa"><span class="ic">📋</span>Programa</button>
+      <button class="tab-btn" data-tab="turnos"><span class="ic">🧩</span>Turnos</button>
+      <button class="tab-btn" data-tab="avisos"><span class="ic">📣</span>Avisos</button>
+      <button class="tab-btn" data-tab="actividades"><span class="ic">📅</span>Mes</button>
+      <button class="tab-btn" data-tab="lideres"><span class="ic">🔑</span>Líderes</button>
+      <button class="tab-btn" data-tab="admin"><span class="ic">⚙️</span>Admin</button>
+    </div>
+  `;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.onclick = ()=> switchTab(b.dataset.tab);
+  });
+  switchTab('programa');
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  renderTab(tab);
+}
+
+function renderTab(tab){
+  if(tab==='programa') renderPrograma();
+  if(tab==='turnos') renderTurnos();
+  if(tab==='avisos') renderAvisos();
+  if(tab==='actividades') renderActividades();
+  if(tab==='lideres') renderLideres();
+  if(tab==='admin') renderAdmin();
+}
+
+/* ============== PROGRAMA ============== */
+function timeLabel(it){ return it.hora || ''; }
+
+function renderItemRow(it){
+  return `
+    <div class="item-row">
+      <div class="time-chip">${it.hora||'--:--'}</div>
+      <div class="item-body">
+        <p class="item-title">${it.actividad||''}</p>
+        ${it.responsable? `<p class="item-resp">👤 ${it.responsable}</p>`:''}
+        ${it.comentarios? `<p class="item-notes">${it.comentarios}</p>`:''}
+      </div>
+    </div>
+  `;
+}
+
+function renderPrograma(){
+  const el = document.getElementById('view-programa');
+  const prep = DATA.programa.preparacion || [];
+  const reu = DATA.programa.reunion || [];
+  const list = progSub==='preparacion'? prep : reu;
+  const hoy = new Date();
+  const mesKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  const slogan = (DATA.sloganMes && DATA.sloganMes[mesKey]) || '';
+  const fechaProg = DATA.fechaPrograma || '';
+  el.innerHTML = `
+    <div class="subtabs">
+      <div class="subtab ${progSub==='reunion'?'active':''}" data-s="reunion">Reunión</div>
+      <div class="subtab ${progSub==='preparacion'?'active':''}" data-s="preparacion">Preparación</div>
+    </div>
+    ${fechaProg || slogan ? `
+      <div class="card" style="margin-bottom:10px;">
+        ${fechaProg ? `<p style="font-size:12px;color:var(--gray);margin:0 0 4px;text-transform:uppercase;letter-spacing:.5px;">📅 ${formatFechaLargaSimple(fechaProg)}</p>` : ''}
+        ${slogan ? `<p style="font-size:13px;font-weight:700;color:var(--accent);margin:0;font-style:italic;">"${slogan}"</p>` : ''}
+      </div>
+    ` : ''}
+    <div class="card">
+      ${list.length? list.map(renderItemRow).join('') : `<div class="empty">Aún no hay actividades cargadas para esta sección.</div>`}
+    </div>
+  `;
+  el.querySelectorAll('.subtab').forEach(s=>{
+    s.onclick = ()=>{ progSub = s.dataset.s; renderPrograma(); };
+  });
+}
+function formatFechaLargaSimple(f){
+  if(!f) return '';
+  const [y,m,d] = f.split('-').map(Number);
+  const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${dias[new Date(y,m-1,d).getDay()]} ${d} de ${meses[m-1]} de ${y}`;
+}
+
+/* ============== TURNOS ============== */
+let turnosSub = 'equipo';
+let turnosMesActual = '';
+
+function renderTurnos(){
+  const el = document.getElementById('view-turnos');
+  el.innerHTML = `
+    <div class="subtabs" id="turnos-subtabs">
+      <div class="subtab ${turnosSub==='equipo'?'active':''}" data-s="equipo">Equipo</div>
+      <div class="subtab ${turnosSub==='mes'?'active':''}" data-s="mes">Calendario del mes</div>
+    </div>
+    <div id="turnos-content"></div>
+  `;
+  el.querySelectorAll('#turnos-subtabs .subtab').forEach(s=>{
+    s.onclick = ()=>{ turnosSub = s.dataset.s; renderTurnos(); };
+  });
+  const content = document.getElementById('turnos-content');
+  if(turnosSub==='mes') renderTurnosCalendario(content);
+  else renderTurnosEquipo(content);
+}
+
+function todayStr(){
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+}
+function getProximoTurnoFecha(){
+  const hoy = new Date();
+  const ts = todayStr();
+  let candidatos = [];
+  for(let offset=0; offset<=2; offset++){
+    const d = new Date(hoy.getFullYear(), hoy.getMonth()+offset, 1);
+    const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const tm = DATA.turnosMes[mk];
+    if(tm && tm.dias && tm.dias.length) candidatos.push(...tm.dias.map(f=>({fecha:f, mesKey:mk})));
+    const pt = DATA.predicadoresTurnos && DATA.predicadoresTurnos[mk];
+    if(pt && pt.length) candidatos.push(...pt.map(t=>({fecha:t.fecha, mesKey:mk})));
+  }
+  candidatos = candidatos.filter(cnd=> cnd.fecha >= ts).sort((a,b)=> a.fecha.localeCompare(b.fecha));
+  return candidatos[0] || null;
+}
+function formatFechaTitulo(f){
+  if(!f) return '';
+  const [y,m,d] = f.split('-').map(Number);
+  const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${dias[new Date(y,m-1,d).getDay()]} ${d} de ${meses[m-1]} ${y}`.toUpperCase();
+}
+
+/* vista Equipo: muestra el próximo turno con diseño de tarjetas prominentes (imagen 2) */
+function renderTurnosEquipo(content){
+  const prox = getProximoTurnoFecha();
+  if(!prox){
+    content.innerHTML = `<div class="empty">No hay próximos turnos generados todavía. Pídele a tu líder de zona que los genere desde "Líderes".</div>`;
+    return;
+  }
+  const { fecha, mesKey } = prox;
+  const turnosMes = DATA.turnosMes[mesKey] || {dias:[], asignaciones:[]};
+  const zonasPorId = {};
+  (DATA.zonas||[]).forEach(z=> zonasPorId[z.id] = z.nombre);
+  const asigDia = (turnosMes.asignaciones||[]).filter(a=> a.fecha===fecha);
+  const porZona = {};
+  asigDia.forEach(a=>{ if(!porZona[a.zona]) porZona[a.zona]=[]; porZona[a.zona].push(a); });
+  const zonaIds = Object.keys(porZona);
+  const rrssAsig = (DATA.multimediaRRSS && DATA.multimediaRRSS[mesKey]) || [];
+  const predDia = ((DATA.predicadoresTurnos && DATA.predicadoresTurnos[mesKey]) || []).find(t=> t.fecha===fecha);
+
+  content.innerHTML = `
+    <div class="card" style="text-align:center;margin-bottom:14px;">
+      <p class="tag" style="margin-bottom:4px;">Próximo turno</p>
+      <p class="item-title" style="margin:0;font-size:15.5px;letter-spacing:.5px;">${formatFechaTitulo(fecha)}</p>
+    </div>
+    ${predDia? `
+      <div class="role-card">
+        <div class="role-head">🎤 Predicador</div>
+        <div class="role-line"><span class="nom">${predDia.nombre}</span></div>
+      </div>
+    ` : ''}
+    ${zonaIds.length? zonaIds.map(zid=>`
+      <div class="role-card">
+        <div class="role-head">${zonasPorId[zid]||zid}</div>
+        ${porZona[zid].map(a=>`
+          <div class="role-line">
+            <span class="rol">${a.rol}</span>
+            <span class="nom" style="${!a.nombre?'color:var(--danger);':''}">${a.nombre || '⚠️ Sin asignar'}</span>
+          </div>
+        `).join('')}
+      </div>
+    `).join('') : `<div class="empty">Sin turnos de zona cargados para esta fecha.</div>`}
+    <div class="role-card">
+      <div class="role-head">📱 Multimedia — RRSS (${mesKey})</div>
+      ${rrssAsig.length? rrssAsig.map(r=>`<div class="role-line"><span class="nom">${r}</span></div>`).join('') : `<div class="empty" style="padding:10px 0;">Sin asignar este mes.</div>`}
+    </div>
+  `;
+}
+
+/* vista Calendario del mes */
+function renderTurnosCalendario(content){
+  const hoy = new Date();
+  const mesKey = turnosMesActual || `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  turnosMesActual = mesKey;
+  const turnosMes = DATA.turnosMes[mesKey] || {dias:[], asignaciones:[]};
+  const dias = (turnosMes.dias||[]).slice().sort();
+  const zonasPorId = {};
+  (DATA.zonas||[]).forEach(z=> zonasPorId[z.id] = z.nombre);
+
+  content.innerHTML = `
+    <div class="form-grid" style="margin-bottom:10px;">
+      <input id="turnos-mes-input" type="month" value="${mesKey}">
+    </div>
+    <div class="search-box">
+      <input id="turnos-busca-nombre" placeholder="Busca tu nombre para resaltar tus turnos">
+    </div>
+    <div id="turnos-dias-list">
+      ${dias.length? dias.map((fecha,idx)=>{
+        const asigDia = (turnosMes.asignaciones||[]).filter(a=> a.fecha===fecha);
+        const porZona = {};
+        asigDia.forEach(a=>{ if(!porZona[a.zona]) porZona[a.zona]=[]; porZona[a.zona].push(a); });
+        const wk = getWeekKey(fecha);
+        const wkAnterior = idx>0? getWeekKey(dias[idx-1]) : null;
+        const sep = (wk!==wkAnterior)? `<div class="week-sep"><span class="line"></span><span class="lbl">Semana del ${formatFecha(wk)}</span><span class="line"></span></div>` : '';
+        return `
+          ${sep}
+          <div class="day-card">
+            <p class="day-title">${formatFechaLarga(fecha)}</p>
+            ${Object.keys(porZona).map(zid=>`
+              <p class="day-zona">${zonasPorId[zid]||zid}</p>
+              ${porZona[zid].map(a=>`
+                <div class="day-line" data-nombre="${(a.nombre||'').toLowerCase()}" style="${!a.nombre?'background:rgba(192,82,74,.12);':''}" >
+                  <span class="rol">${a.rol}</span>
+                  <span class="nom" style="${!a.nombre?'color:var(--danger);':''}">${a.nombre || '⚠️ Debe asignarse alguien'}</span>
+                </div>
+              `).join('')}
+            `).join('')}
+          </div>
+        `;
+      }).join('') : `<div class="empty">Aún no hay turnos generados para este mes. Pídele a tu líder de zona que los genere desde "Líderes".</div>`}
+    </div>
+  `;
+  document.getElementById('turnos-mes-input').onchange = (e)=>{
+    turnosMesActual = e.target.value || mesKey;
+    renderTurnosCalendario(content);
+  };
+  document.getElementById('turnos-busca-nombre').oninput = (e)=>{
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('#turnos-dias-list .day-line').forEach(line=>{
+      line.classList.toggle('me', q.length>1 && line.dataset.nombre.includes(q));
+    });
+  };
+}
+function getWeekKey(f){
+  if(!f) return '';
+  const [y,m,d] = f.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  const day = dt.getDay();
+  const diffToMonday = (day===0? -6 : 1-day);
+  const monday = new Date(dt); monday.setDate(dt.getDate()+diffToMonday);
+  return `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
+}
+function formatFechaLarga(f){
+  if(!f) return '';
+  const [y,m,d] = f.split('-').map(Number);
+  const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${dias[new Date(y,m-1,d).getDay()]} ${d} de ${meses[m-1]}`;
+}
+
+/* ============== AVISOS ============== */
+function renderAvisos(){
+  const el = document.getElementById('view-avisos');
+  const list = DATA.avisos || [];
+  el.innerHTML = list.length? list.map(a=>`
+    <div class="aviso-card"><div class="aviso-dot"></div><div>${a}</div></div>
+  `).join('') : `<div class="empty">No hay avisos por ahora.</div>`;
+}
+
+/* ============== ACTIVIDADES DEL MES ============== */
+function renderActividades(){
+  const el = document.getElementById('view-actividades');
+  const list = (DATA.actividades||[]).slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''));
+  el.innerHTML = `
+    <div class="section-title">Actividades especiales</div>
+    ${list.length? list.map(a=>`
+      <div class="act-card">
+        <span class="act-date">${formatFecha(a.fecha)}</span>
+        <p class="act-title">${a.titulo}</p>
+        ${a.nota? `<p class="act-note">${a.nota}</p>`:''}
+      </div>
+    `).join('') : `<div class="empty">No hay actividades especiales cargadas este mes.</div>`}
+  `;
+}
+function formatFecha(f){
+  if(!f) return '';
+  const [y,m,d] = f.split('-');
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  if(!m) return f;
+  return `${d} ${meses[parseInt(m,10)-1]}`;
+}
+
+/* ============== LIDERES ============== */
+function renderLideres(){
+  const el = document.getElementById('view-lideres');
+  if(!isLeader){
+    el.innerHTML = lockScreenHTML('Zona de líderes', 'Ingresa tu PIN personal de líder. Si eres pastor, usa la clave general.');
+    bindLockKeypad(el, (pin)=>{
+      if(pin === (DATA.config.leaderPin || '1234')){
+        isLeader = true; isLeaderMaster = true; currentLeaderName = 'Pastores';
+        currentLeaderZonas = (DATA.zonas||[]).map(z=>z.id);
+        renderLideres();
+        return;
+      }
+      const cuenta = (DATA.lideresCuentas||[]).find(c=> c.pin === pin);
+      if(cuenta){
+        isLeader = true; isLeaderMaster = false; currentLeaderName = cuenta.nombre;
+        currentLeaderZonas = cuenta.zonas||[];
+        renderLideres();
+      } else {
+        toast('PIN incorrecto');
+      }
+    });
+    return;
+  }
+  el.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <p class="tag" style="margin-bottom:4px;">${DATA.config.churchName || 'Iglesia CFC Renca'}</p>
+      <p class="item-title" style="font-size:15px;margin:0;">${DATA.config.pastoresBase || 'Pastores'}</p>
+    </div>
+    <div class="admin-bar" style="margin-top:2px;justify-content:flex-end;">
+      <button class="small-link" id="leader-lock">Cerrar zona</button>
+    </div>
+    <div class="subtabs" id="lideres-subtabs">
+      <div class="subtab ${liderSub==='zonas'?'active':''}" data-s="zonas">Zonas</div>
+      <div class="subtab ${liderSub==='reuniones'?'active':''}" data-s="reuniones">Reuniones</div>
+    </div>
+    <div id="lideres-content"></div>
+  `;
+  document.getElementById('leader-lock').onclick = ()=>{
+    isLeader=false; isLeaderMaster=false; currentLeaderName=''; currentLeaderZonas=[];
+    renderLideres();
+  };
+  el.querySelectorAll('#lideres-subtabs .subtab').forEach(s=>{
+    s.onclick = ()=>{ liderSub = s.dataset.s; renderLideres(); };
+  });
+  const content = document.getElementById('lideres-content');
+  if(liderSub==='reuniones') renderReunionesLideres(content);
+  else renderZonasLideres(content);
+}
+
+function renderReunionesLideres(content){
+  const list = (DATA.lideres.reuniones||[]).slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''));
+  content.innerHTML = `
+    ${list.length? list.map(r=>`
+      <div class="act-card">
+        <span class="tag">${r.modalidad==='online'?'💻 Online':'🏠 Presencial'}</span>
+        <span class="act-date">${formatFecha(r.fecha)}${r.hora? ' · '+r.hora:''}</span>
+        <p class="act-title">${r.titulo}</p>
+        ${r.nota? `<p class="act-note">${r.nota}</p>`:''}
+      </div>
+    `).join('') : `<div class="empty">No hay reuniones de líderes programadas.</div>`}
+  `;
+}
+
+function renderZonasLideres(content){
+  const zonas = DATA.zonas||[];
+  const hoy = new Date();
+  const mesKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  const rrssActual = (DATA.multimediaRRSS && DATA.multimediaRRSS[mesKey]) || [];
+  content.innerHTML = zonas.map(z=>{
+    const puedeEditar = isLeaderMaster || currentLeaderZonas.includes(z.id);
+    const lideresZona = (DATA.lideresCuentas||[]).filter(c=> (c.zonas||[]).includes(z.id)).map(c=>c.nombre);
+    const rrssBlock = (z.id==='multimedia')? `
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+        <p class="tag" style="margin-bottom:6px;">📱 Turno RRSS mensual (${mesKey})</p>
+        <p style="font-size:11px;color:var(--gray-dim);margin:0 0 8px;">Asigna de 1 a 4 personas encargadas de subir contenido a redes sociales este mes.</p>
+        ${puedeEditar? `
+          <div class="chip-list" style="flex-wrap:wrap;gap:6px;margin-bottom:8px;" id="rrss-checks-${z.id}">
+            ${(z.servidores||[]).map(s=>`
+              <label class="chip" style="cursor:pointer;">
+                <input type="checkbox" value="${s}" ${rrssActual.includes(s)?'checked':''} style="width:auto;margin:0;"> ${s}
+              </label>
+            `).join('') || `<span class="empty" style="padding:6px 0;">Agrega servidores a esta zona primero</span>`}
+          </div>
+          <button class="btn btn-outline btn-sm" data-save-rrss="${z.id}">Guardar encargados RRSS</button>
+        ` : `
+          <div class="chip-list">
+            ${rrssActual.length? rrssActual.map(s=>`<span class="chip">${s}</span>`).join('') : `<span class="empty" style="padding:6px 0;">Sin asignar este mes</span>`}
+          </div>
+        `}
+      </div>
+    ` : '';
+    return `
+      <div class="role-card zona-card">
+        <div class="role-head" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>${z.nombre}</span>
+          ${puedeEditar? `<span class="tag" style="background:var(--ok);color:#fff;border-color:transparent;">editable</span>` : `<span class="tag">🔒 solo ver</span>`}
+        </div>
+        <div style="padding:12px 14px;">
+          ${lideresZona.length? `<p class="item-resp" style="margin-bottom:8px;">👤 Lidera: ${lideresZona.join(', ')}</p>` : `<p class="item-resp" style="margin-bottom:8px;color:var(--gray-dim);">Sin líder asignado todavía</p>`}
+          <p class="tag" style="margin-bottom:6px;">Servidores (${(z.servidores||[]).length})</p>
+          <div class="chip-list">
+            ${(z.servidores||[]).map((s,i)=>`
+              <span class="chip">${s}${puedeEditar? ` <button class="chip-x" data-edit-srv="${z.id}|${i}" style="margin-right:2px;color:var(--gray);" title="Editar nombre">✎</button><button class="chip-x" data-rm="${z.id}|${i}">✕</button>`:''}</span>
+            `).join('') || `<span class="empty" style="padding:6px 0;">Sin servidores cargados</span>`}
+          </div>
+          ${puedeEditar? `
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" data-add="${z.id}">+ Agregar servidor</button>
+              <button class="btn btn-outline btn-sm" data-gen="${z.id}">📅 Generar turno del mes</button>
+              <button class="btn btn-outline btn-sm" data-ver="${z.id}">🗓️ Ver / editar turno</button>
+            </div>
+          ` : ''}
+          ${rrssBlock}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  content.querySelectorAll('[data-save-rrss]').forEach(b=> b.onclick = ()=>{
+    const zid = b.dataset.saveRrss;
+    const sel = Array.from(document.querySelectorAll(`#rrss-checks-${zid} input[type=checkbox]:checked`)).map(x=>x.value);
+    if(sel.length>4){ toast('Máximo 4 personas'); return; }
+    if(sel.length<1){ toast('Selecciona al menos 1 persona'); return; }
+    const update = Object.assign({}, DATA.multimediaRRSS||{}, {[mesKey]: sel});
+    db.ref('multimediaRRSS').set(update); toast('Encargados RRSS guardados');
+  });
+
+  content.querySelectorAll('[data-edit-srv]').forEach(b=> b.onclick = ()=>{
+    const [zonaId, idx] = b.dataset.editSrv.split('|');
+    openEditServidorModal(zonaId, parseInt(idx));
+  });
+  content.querySelectorAll('[data-add]').forEach(b=> b.onclick = ()=> openAddServidorModal(b.dataset.add));
+  content.querySelectorAll('[data-rm]').forEach(b=> b.onclick = ()=>{
+    const [zonaId, idx] = b.dataset.rm.split('|');
+    const zona = DATA.zonas.find(z=>z.id===zonaId);
+    const nombreServidor = zona.servidores[idx];
+    const turnosConPersona = [];
+    Object.entries(DATA.turnosMes||{}).forEach(([mes, turnoData])=>{
+      const asigs = (turnoData.asignaciones||[]).filter(a=> a.nombre===nombreServidor);
+      if(asigs.length) turnosConPersona.push(`${mes} (${asigs.length} turnos)`);
+    });
+    let msg = `¿Quitar a "${nombreServidor}" de ${zona.nombre}?`;
+    if(turnosConPersona.length){
+      msg += `\n\n⚠️ Esta persona tiene turnos asignados en:\n${turnosConPersona.join(', ')}\nAl quitarla quedará como "sin asignar" en esos turnos.`;
+    }
+    if(!confirm(msg)) return;
+    const zonasCopy = DATA.zonas.map(z=> z.id===zonaId? Object.assign({}, z, {servidores: z.servidores.filter((_,i)=> i!=idx)}) : z);
+    db.ref('zonas').set(zonasCopy);
+    toast('Servidor quitado');
+  });
+  content.querySelectorAll('[data-gen]').forEach(b=> b.onclick = ()=> openGenerarTurnoModal(b.dataset.gen));
+  content.querySelectorAll('[data-ver]').forEach(b=> b.onclick = ()=>{
+    const hoy = new Date();
+    const mesKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+    openEditarAsignacionesModal(b.dataset.ver, mesKey);
+  });
+}
+
+function openAddServidorModal(zonaId){
+  const zona = DATA.zonas.find(z=>z.id===zonaId);
+  openModal(`
+    <h3>Agregar servidor a ${zona.nombre}</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Nombre completo</label><input id="m-serv-nombre" placeholder="Nombre Apellido"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Agregar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const nombre = document.getElementById('m-serv-nombre').value.trim();
+    if(!nombre){ toast('Escribe un nombre'); return; }
+    const zonasCopy = DATA.zonas.map(z=> z.id===zonaId? Object.assign({}, z, {servidores: [...(z.servidores||[]), nombre]}) : z);
+    db.ref('zonas').set(zonasCopy);
+    closeModal(); toast('Servidor agregado');
+  };
+}
+
+function openEditServidorModal(zonaId, idx){
+  const zona = DATA.zonas.find(z=>z.id===zonaId);
+  const nombreActual = zona.servidores[idx];
+  openModal(`
+    <h3>Editar nombre de servidor</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Nombre actual: <strong>${nombreActual}</strong></label>
+      <input id="m-serv-nuevo" value="${nombreActual}" placeholder="Nombre Apellido"></div>
+    </div>
+    <p class="hint">Si este servidor tiene turnos asignados en el mes, el nombre se actualizará también allí.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const nuevoNombre = document.getElementById('m-serv-nuevo').value.trim();
+    if(!nuevoNombre){ toast('Escribe un nombre'); return; }
+    const zonasCopy = DATA.zonas.map(z=>{
+      if(z.id!==zonaId) return z;
+      const newServ = (z.servidores||[]).slice();
+      newServ[idx] = nuevoNombre;
+      return Object.assign({}, z, {servidores: newServ});
+    });
+    db.ref('zonas').set(zonasCopy);
+    const turnosMesUpdate = JSON.parse(JSON.stringify(DATA.turnosMes||{}));
+    let changed = false;
+    Object.keys(turnosMesUpdate).forEach(mes=>{
+      (turnosMesUpdate[mes].asignaciones||[]).forEach(a=>{
+        if(a.zona===zonaId && a.nombre===nombreActual){ a.nombre=nuevoNombre; changed=true; }
+      });
+    });
+    if(changed) db.ref('turnosMes').set(turnosMesUpdate);
+    closeModal(); toast('Nombre actualizado');
+  };
+}
+
+function sugerirFechas(mesKey, weekdays){
+  const [y,m] = mesKey.split('-').map(Number);
+  const last = new Date(y, m, 0).getDate();
+  const fechas = [];
+  for(let day=1; day<=last; day++){
+    const d = new Date(y, m-1, day);
+    if((weekdays||[]).includes(d.getDay())) fechas.push(`${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`);
+  }
+  return fechas;
+}
+
+function openGenerarTurnoModal(zonaId){
+  const hoy = new Date();
+  const defaultMes = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  renderGenerarModalBody(zonaId, defaultMes, sugerirFechas(defaultMes, DATA.config.diasTurnoDefault||[0,3]));
+}
+
+function renderGenerarModalBody(zonaId, mesKey, fechas){
+  const zona = DATA.zonas.find(z=>z.id===zonaId);
+  openModal(`
+    <h3>Turno del mes — ${zona.nombre}</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Mes</label><input id="m-mes" type="month" value="${mesKey}"></div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);">Fechas de reunión este mes</label>
+        <div class="chip-list" style="margin-top:6px;">
+          ${fechas.slice().sort().map(f=>`<span class="chip">${formatFecha(f)} <button class="chip-x" data-rmf="${f}">✕</button></span>`).join('') || '<span class="empty" style="padding:6px 0;">Sin fechas, agrega una abajo</span>'}
+        </div>
+        <p class="hint" style="margin:8px 0 0;">Por defecto sugerimos domingos y miércoles, pero puedes agregar o quitar cualquier fecha.</p>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="m-nueva-fecha" type="date" style="flex:1;">
+          <button class="btn btn-outline btn-sm" id="m-add-fecha">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-generar">Generar sugerido</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-mes').onchange = (e)=>{
+    const nuevoMes = e.target.value || mesKey;
+    renderGenerarModalBody(zonaId, nuevoMes, sugerirFechas(nuevoMes, DATA.config.diasTurnoDefault||[0,3]));
+  };
+  document.getElementById('m-add-fecha').onclick = ()=>{
+    const v = document.getElementById('m-nueva-fecha').value;
+    if(!v) return;
+    const nuevas = fechas.includes(v)? fechas : [...fechas, v];
+    renderGenerarModalBody(zonaId, mesKey, nuevas);
+  };
+  document.querySelectorAll('[data-rmf]').forEach(b=> b.onclick = ()=>{
+    renderGenerarModalBody(zonaId, mesKey, fechas.filter(x=> x!==b.dataset.rmf));
+  });
+  document.getElementById('m-generar').onclick = ()=>{
+    if(!fechas.length){ toast('Agrega al menos una fecha'); return; }
+    generarSugeridoZona(zonaId, mesKey, fechas);
+    closeModal();
+    openEditarAsignacionesModal(zonaId, mesKey);
+  };
+}
+
+function generarSugeridoZona(zonaId, mesKey, fechas){
+  const zona = DATA.zonas.find(z=>z.id===zonaId);
+  if(!zona) return;
+  const turnosMes = DATA.turnosMes[mesKey] || {dias:[], asignaciones:[]};
+  const ocupado = {};
+  (turnosMes.asignaciones||[]).forEach(a=>{
+    if(a.zona !== zonaId && a.nombre){
+      if(!ocupado[a.fecha]) ocupado[a.fecha] = new Set();
+      ocupado[a.fecha].add(a.nombre);
+    }
+  });
+  const servidores = (zona.servidores||[]).slice();
+  let cursor = 0;
+  const nuevas = [];
+  fechas.slice().sort().forEach(fecha=>{
+    const usadosHoy = new Set();
+    (zona.roles||[]).forEach(rol=>{
+      let elegido = '';
+      if(servidores.length){
+        let intentos = 0;
+        while(intentos < servidores.length){
+          const candidato = servidores[cursor % servidores.length];
+          cursor++; intentos++;
+          const ocupadoOtraZona = ocupado[fecha] && ocupado[fecha].has(candidato);
+          if(!ocupadoOtraZona && !usadosHoy.has(candidato)){ elegido = candidato; break; }
+        }
+      }
+      if(elegido){
+        usadosHoy.add(elegido);
+        if(!ocupado[fecha]) ocupado[fecha] = new Set();
+        ocupado[fecha].add(elegido);
+      }
+      nuevas.push({fecha, zona: zonaId, rol, nombre: elegido});
+    });
+  });
+  const otras = (turnosMes.asignaciones||[]).filter(a=> a.zona !== zonaId);
+  const diasUnion = Array.from(new Set([...(turnosMes.dias||[]), ...fechas])).sort();
+  db.ref('turnosMes/'+mesKey).set({ dias: diasUnion, asignaciones: [...otras, ...nuevas] });
+  toast('Turno sugerido generado, revísalo abajo');
+}
+
+function openEditarAsignacionesModal(zonaId, mesKey){
+  const zona = DATA.zonas.find(z=>z.id===zonaId);
+  const turnosMes = DATA.turnosMes[mesKey] || {dias:[],asignaciones:[]};
+  const propias = (turnosMes.asignaciones||[]).filter(a=> a.zona===zonaId).slice().sort((a,b)=> a.fecha.localeCompare(b.fecha));
+  openModal(`
+    <h3>Ajustar turno — ${zona.nombre} (${mesKey})</h3>
+    <div class="form-grid">
+      ${propias.map((a,i)=>{
+        const wk = getWeekKey(a.fecha);
+        const wkAnterior = i>0? getWeekKey(propias[i-1].fecha) : null;
+        const sep = (wk!==wkAnterior)? `<div class="week-sep"><span class="line"></span><span class="lbl">Semana del ${formatFecha(wk)}</span><span class="line"></span></div>` : '';
+        return `
+        ${sep}
+        <div class="row2" style="align-items:center;">
+          <div>
+            <label style="font-size:11px;color:var(--gray);font-weight:700;">📅 ${formatFecha(a.fecha)}</label>
+            <p style="margin:0;font-size:12.5px;color:var(--gray);">${a.rol}</p>
+          </div>
+          <select data-asig="${i}">
+            <option value="">— Sin asignar —</option>
+            ${(zona.servidores||[]).map(s=>`<option value="${s}" ${s===a.nombre?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      `;}).join('') || `<div class="empty">No hay fechas generadas todavía para este mes.</div>`}
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cerrar</button>
+      ${propias.length? `<button class="btn" id="m-save">Guardar ajustes</button>`:''}
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  const saveBtn = document.getElementById('m-save');
+  if(saveBtn) saveBtn.onclick = ()=>{
+    const propiasActualizadas = propias.map((a,i)=> Object.assign({}, a, {
+      nombre: document.querySelector(`[data-asig="${i}"]`).value
+    }));
+    const otras = (turnosMes.asignaciones||[]).filter(a=> a.zona !== zonaId);
+    db.ref('turnosMes/'+mesKey+'/asignaciones').set([...otras, ...propiasActualizadas]);
+    closeModal(); toast('Turno guardado');
+  };
+}
+
+
+function lockScreenHTML(title, sub){
+  return `
+    <div class="lock-wrap">
+      <div class="ic">🔒</div>
+      <h3>${title}</h3>
+      <p>${sub}</p>
+      <div class="pin-dots" id="pin-dots">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="keypad" id="keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}">${n}</button>`).join('')}
+        <button class="ghost"></button>
+        <button data-n="0">0</button>
+        <button data-n="back">⌫</button>
+      </div>
+    </div>
+  `;
+}
+function bindLockKeypad(container, onComplete){
+  let entered = '';
+  const dots = container.querySelectorAll('#pin-dots span');
+  container.querySelectorAll('#keypad button[data-n]').forEach(b=>{
+    b.onclick = ()=>{
+      const n = b.dataset.n;
+      if(n==='back'){ entered = entered.slice(0,-1); }
+      else if(entered.length<4){ entered += n; }
+      dots.forEach((d,i)=> d.classList.toggle('filled', i<entered.length));
+      if(entered.length===4){
+        setTimeout(()=>{ onComplete(entered); entered=''; dots.forEach(d=>d.classList.remove('filled')); }, 150);
+      }
+    };
+  });
+}
+
+/* ============== ADMIN ============== */
+let adminSub = 'programa';
+function renderAdmin(){
+  const el = document.getElementById('view-admin');
+  if(!isAdmin){
+    el.innerHTML = lockScreenHTML('Panel de administración', 'Ingresa el PIN para editar el programa, los turnos, los avisos y las actividades.');
+    bindLockKeypad(el, (pin)=>{
+      if(pin === (DATA.config.pin || '1234')){
+        isAdmin = true;
+        renderAdmin();
+      } else {
+        toast('PIN incorrecto');
+      }
+    });
+    return;
+  }
+  el.innerHTML = `
+    <div class="admin-bar">
+      <h2>Administración</h2>
+      <button class="small-link" id="admin-lock">Cerrar sesión</button>
+    </div>
+    <div class="subtabs" id="admin-subtabs">
+      ${['programa','turnos','zonas','cuentas','avisos','actividades','lideres','config'].map(s=>`
+        <div class="subtab ${adminSub===s?'active':''}" data-s="${s}">${labelFor(s)}</div>
+      `).join('')}
+    </div>
+    <div id="admin-content"></div>
+  `;
+  document.getElementById('admin-lock').onclick = ()=>{ isAdmin=false; renderAdmin(); };
+  el.querySelectorAll('.subtab').forEach(s=>{
+    s.onclick = ()=>{ adminSub = s.dataset.s; renderAdmin(); };
+  });
+  renderAdminContent();
+}
+function labelFor(s){
+  return {programa:'Programa', turnos:'Turnos', zonas:'Zonas', cuentas:'Cuentas líderes', avisos:'Avisos', actividades:'Actividades', lideres:'Líderes', config:'Ajustes'}[s];
+}
+
+function renderAdminContent(){
+  const c = document.getElementById('admin-content');
+  if(adminSub==='programa') return adminPrograma(c);
+  if(adminSub==='turnos') return adminTurnos(c);
+  if(adminSub==='zonas') return adminZonas(c);
+  if(adminSub==='cuentas') return adminCuentasLideres(c);
+  if(adminSub==='avisos') return adminAvisos(c);
+  if(adminSub==='actividades') return adminActividades(c);
+  if(adminSub==='lideres') return adminLideres(c);
+  if(adminSub==='config') return adminConfig(c);
+}
+
+/* ---- admin: programa ---- */
+let progAdminSub = 'reunion';
+function adminPrograma(c){
+  const list = DATA.programa[progAdminSub] || [];
+  c.innerHTML = `
+    <div class="subtabs">
+      <div class="subtab ${progAdminSub==='reunion'?'active':''}" data-s="reunion">Reunión</div>
+      <div class="subtab ${progAdminSub==='preparacion'?'active':''}" data-s="preparacion">Preparación</div>
+    </div>
+    ${list.map((it,i)=>`
+      <div class="admin-item">
+        <div class="admin-item-top">
+          <div><span class="tag">${it.hora||''}</span><p class="item-title" style="margin-top:4px;">${it.actividad}</p>
+          <p class="item-resp">${it.responsable||''}</p></div>
+          <div style="display:flex;gap:6px;">
+            <button class="iconbtn" data-edit="${i}">✎</button>
+            <button class="iconbtn del" data-del="${i}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-outline" id="add-prog">+ Agregar actividad</button>
+  `;
+  const hoy2 = new Date();
+  const mesKey2 = `${hoy2.getFullYear()}-${String(hoy2.getMonth()+1).padStart(2,'0')}`;
+  const sloganActual = (DATA.sloganMes && DATA.sloganMes[mesKey2]) || '';
+  const fechaProg = DATA.fechaPrograma || '';
+  const sloganCard = document.createElement('div');
+  sloganCard.innerHTML = `
+    <div class="card" style="margin-top:14px;">
+      <p class="tag" style="margin-bottom:8px;">📅 Fecha del programa (visible en portada)</p>
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Fecha de la reunión</label>
+        <input id="prog-fecha" type="date" value="${fechaProg}"></div>
+      </div>
+      <p class="tag" style="margin-bottom:8px;margin-top:10px;">✨ Slogan del mes (${mesKey2})</p>
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Slogan</label>
+        <input id="prog-slogan" value="${sloganActual}" placeholder="HONRA, la imagen del hijo es la gloria del padre"></div>
+      </div>
+      <button class="btn" id="prog-slogan-save" style="margin-top:6px;">Guardar fecha y slogan</button>
+    </div>
+  `;
+  c.appendChild(sloganCard);
+  document.getElementById('prog-slogan-save').onclick = ()=>{
+    const fecha = document.getElementById('prog-fecha').value;
+    const slogan = document.getElementById('prog-slogan').value.trim();
+    const sloganMesUpdate = Object.assign({}, DATA.sloganMes||{}, {[mesKey2]: slogan});
+    db.ref('sloganMes').set(sloganMesUpdate);
+    db.ref('fechaPrograma').set(fecha);
+    toast('Fecha y slogan guardados');
+  };
+  c.querySelectorAll('.subtab').forEach(s=> s.onclick=()=>{ progAdminSub=s.dataset.s; adminPrograma(c); });
+  c.querySelector('#add-prog').onclick = ()=> openProgModal(null);
+  c.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=> openProgModal(parseInt(b.dataset.edit)));
+  c.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const arr = DATA.programa[progAdminSub].slice();
+    arr.splice(parseInt(b.dataset.del),1);
+    db.ref('programa/'+progAdminSub).set(arr);
+    toast('Eliminado');
+  });
+}
+function openProgModal(idx){
+  const isNew = idx===null;
+  const it = isNew? {hora:'',tiempo:'',actividad:'',responsable:'',comentarios:''} : DATA.programa[progAdminSub][idx];
+  openModal(`
+    <h3>${isNew?'Nueva actividad':'Editar actividad'}</h3>
+    <div class="form-grid">
+      <div class="row2">
+        <div><label style="font-size:11px;color:var(--gray);">Hora</label><input id="m-hora" value="${it.hora||''}" placeholder="11:00"></div>
+        <div><label style="font-size:11px;color:var(--gray);">Duración</label><input id="m-tiempo" value="${it.tiempo||''}" placeholder="0:05"></div>
+      </div>
+      <div><label style="font-size:11px;color:var(--gray);">Actividad</label><input id="m-act" value="${it.actividad||''}"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Responsable</label><input id="m-resp" value="${it.responsable||''}"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Comentarios</label><textarea id="m-com">${it.comentarios||''}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const newIt = {
+      hora: document.getElementById('m-hora').value,
+      tiempo: document.getElementById('m-tiempo').value,
+      actividad: document.getElementById('m-act').value,
+      responsable: document.getElementById('m-resp').value,
+      comentarios: document.getElementById('m-com').value,
+    };
+    const arr = (DATA.programa[progAdminSub]||[]).slice();
+    if(isNew) arr.push(newIt); else arr[idx] = newIt;
+    db.ref('programa/'+progAdminSub).set(arr);
+    closeModal();
+    toast('Guardado');
+  };
+}
+
+/* ---- admin: turnos ---- */
+let adminTurnosMes = null;
+function adminTurnos(c){
+  const hoy = new Date();
+  const mesKey = adminTurnosMes || `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  adminTurnosMes = mesKey;
+  const preds = DATA.predicadores || ['Pastor Luis Osses'];
+  const turnosPredMes = ((DATA.predicadoresTurnos && DATA.predicadoresTurnos[mesKey]) || []).slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''));
+  const turnosMes = DATA.turnosMes[mesKey] || {dias:[], asignaciones:[]};
+  const zonasPorId = {}; (DATA.zonas||[]).forEach(z=> zonasPorId[z.id] = z.nombre);
+  const zonaMap = {}; (DATA.zonas||[]).forEach(z=> zonaMap[z.id] = z);
+  const dias = (turnosMes.dias||[]).slice().sort();
+
+  c.innerHTML = `
+    <div class="form-grid" style="margin-bottom:14px;">
+      <div><label style="font-size:11px;color:var(--gray);">Mes a revisar</label>
+      <input id="adm-mes" type="month" value="${mesKey}"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <p class="tag" style="margin-bottom:8px;">🎤 Predicadores</p>
+      <div class="chip-list" id="pred-list">
+        ${preds.map((p,i)=>`
+          <span class="chip">${p}
+            <button class="chip-x" data-edit-pred="${i}" style="color:var(--gray);" title="Editar">✎</button>
+            <button class="chip-x" data-del-pred="${i}">✕</button>
+          </span>
+        `).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input id="new-pred" placeholder="Nombre del predicador" style="flex:1;">
+        <button class="btn btn-outline btn-sm" id="add-pred">+ Agregar</button>
+      </div>
+
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+        <p class="tag" style="margin-bottom:8px;">📅 Asignar fecha de predicación (${mesKey})</p>
+        <div class="row2">
+          <div><label style="font-size:11px;color:var(--gray);">Fecha</label><input id="adm-pred-fecha" type="date"></div>
+          <div><label style="font-size:11px;color:var(--gray);">Predicador</label>
+            <select id="adm-pred-nombre">${preds.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="add-pred-turno" style="margin-top:8px;">+ Asignar fecha</button>
+        <div class="chip-list" style="margin-top:10px;">
+          ${turnosPredMes.length? turnosPredMes.map((t,i)=>`<span class="chip">${formatFecha(t.fecha)} — ${t.nombre} <button class="chip-x" data-del-pred-turno="${i}">✕</button></span>`).join('') : `<span class="empty" style="padding:6px 0;">Sin fechas asignadas este mes</span>`}
+        </div>
+        <p class="hint" style="margin-top:8px;">Esto se muestra en el botón "Turnos" → apartado "Predicador".</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="tag" style="margin-bottom:4px;">Turnos del equipo (semana/domingo)</p>
+      <p style="font-size:11px;color:var(--gray-dim);margin:0 0 10px;">Esto se rellena automáticamente desde cada zona en "Líderes" → Zonas → Generar turno del mes. Aquí puedes revisarlo y corregir un nombre puntual si hace falta.</p>
+      <div id="adm-turnos-dias">
+        ${dias.length? dias.map((fecha,idx)=>{
+          const asigDia = (turnosMes.asignaciones||[]).filter(a=> a.fecha===fecha);
+          const wk = getWeekKey(fecha);
+          const wkAnt = idx>0? getWeekKey(dias[idx-1]) : null;
+          const sep = (wk!==wkAnt)? `<div class="week-sep"><span class="line"></span><span class="lbl">Semana del ${formatFecha(wk)}</span><span class="line"></span></div>` : '';
+          return `
+            ${sep}
+            <div class="day-card">
+              <p class="day-title">${formatFechaLarga(fecha)}</p>
+              ${asigDia.map(a=>{
+                const zona = zonaMap[a.zona];
+                const gi = (turnosMes.asignaciones||[]).indexOf(a);
+                return `
+                <div class="row2" style="align-items:center;margin-bottom:6px;">
+                  <div>
+                    <span class="tag">${zonasPorId[a.zona]||a.zona}</span>
+                    <p style="margin:2px 0 0;font-size:12.5px;color:var(--gray);">${a.rol}</p>
+                  </div>
+                  <select data-gidx="${gi}">
+                    <option value="">— Sin asignar —</option>
+                    ${((zona&&zona.servidores)||[]).map(s=>`<option value="${s}" ${s===a.nombre?'selected':''}>${s}</option>`).join('')}
+                  </select>
+                </div>`;
+              }).join('')}
+            </div>
+          `;
+        }).join('') : `<div class="empty">Aún no hay turnos generados este mes. Se generan desde "Líderes" → Zonas → Generar turno del mes.</div>`}
+      </div>
+      ${dias.length? `<button class="btn" id="adm-turnos-save" style="margin-top:10px;">Guardar cambios</button>` : ''}
+    </div>
+  `;
+
+  document.getElementById('adm-mes').onchange = (e)=>{
+    adminTurnosMes = e.target.value || mesKey;
+    adminTurnos(c);
+  };
+
+  document.getElementById('add-pred').onclick = ()=>{
+    const v = document.getElementById('new-pred').value.trim();
+    if(!v) return;
+    const arr = (DATA.predicadores||[]).slice();
+    arr.push(v);
+    db.ref('predicadores').set(arr); toast('Predicador agregado');
+  };
+  c.querySelectorAll('[data-del-pred]').forEach(b=> b.onclick=()=>{
+    const i = parseInt(b.dataset.delPred);
+    if(!confirm(`¿Quitar a "${(DATA.predicadores||[])[i]}" de los predicadores?`)) return;
+    const arr = (DATA.predicadores||[]).slice(); arr.splice(i,1);
+    db.ref('predicadores').set(arr); toast('Eliminado');
+  });
+  c.querySelectorAll('[data-edit-pred]').forEach(b=> b.onclick=()=>{
+    const i = parseInt(b.dataset.editPred);
+    const actual = (DATA.predicadores||[])[i];
+    openModal(`
+      <h3>Editar predicador</h3>
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Nombre</label><input id="m-pred-nom" value="${actual}"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+        <button class="btn" id="m-save">Guardar</button>
+      </div>
+    `);
+    document.getElementById('m-cancel').onclick = closeModal;
+    document.getElementById('m-save').onclick = ()=>{
+      const nuevo = document.getElementById('m-pred-nom').value.trim();
+      if(!nuevo) return;
+      const arr = (DATA.predicadores||[]).slice(); arr[i]=nuevo;
+      db.ref('predicadores').set(arr); closeModal(); toast('Guardado');
+    };
+  });
+
+  document.getElementById('add-pred-turno').onclick = ()=>{
+    const fecha = document.getElementById('adm-pred-fecha').value;
+    const nombre = document.getElementById('adm-pred-nombre').value;
+    if(!fecha){ toast('Selecciona una fecha'); return; }
+    const arr = turnosPredMes.slice();
+    arr.push({fecha, nombre});
+    const update = Object.assign({}, DATA.predicadoresTurnos||{}, {[mesKey]: arr});
+    db.ref('predicadoresTurnos').set(update); toast('Fecha asignada');
+  };
+  c.querySelectorAll('[data-del-pred-turno]').forEach(b=> b.onclick=()=>{
+    const i = parseInt(b.dataset.delPredTurno);
+    const arr = turnosPredMes.slice(); arr.splice(i,1);
+    const update = Object.assign({}, DATA.predicadoresTurnos||{}, {[mesKey]: arr});
+    db.ref('predicadoresTurnos').set(update); toast('Eliminado');
+  });
+
+  const saveBtn = document.getElementById('adm-turnos-save');
+  if(saveBtn) saveBtn.onclick = ()=>{
+    const asignacionesCopy = (turnosMes.asignaciones||[]).slice();
+    c.querySelectorAll('[data-gidx]').forEach(sel=>{
+      const gi = parseInt(sel.dataset.gidx);
+      asignacionesCopy[gi] = Object.assign({}, asignacionesCopy[gi], {nombre: sel.value});
+    });
+    db.ref('turnosMes/'+mesKey+'/asignaciones').set(asignacionesCopy);
+    toast('Turnos guardados');
+  };
+}
+function openTurnoModal(idx){
+  const isNew = idx===null;
+  const t = isNew? {area:'',rol:'',nombre:''} : DATA.turnos[idx];
+  const todosServidores = Array.from(new Set((DATA.zonas||[]).flatMap(z=> z.servidores||[]))).sort();
+  openModal(`
+    <h3>${isNew?'Nuevo turno':'Editar turno'}</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Área</label><input id="m-area" value="${t.area||''}" placeholder="Ujieres, Adoradores..."></div>
+      <div><label style="font-size:11px;color:var(--gray);">Rol</label><input id="m-rol" value="${t.rol||''}" placeholder="Bienvenida entrada 1"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Persona asignada</label>
+        <select id="m-nom">
+          <option value="">— Sin asignar —</option>
+          ${todosServidores.map(s=>`<option value="${s}" ${s===t.nombre?'selected':''}>${s}</option>`).join('')}
+          ${t.nombre && !todosServidores.includes(t.nombre) ? `<option value="${t.nombre}" selected>${t.nombre}</option>` : ''}
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const newT = {
+      area: document.getElementById('m-area').value,
+      rol: document.getElementById('m-rol').value,
+      nombre: document.getElementById('m-nom').value,
+    };
+    const arr = (DATA.turnos||[]).slice();
+    if(isNew) arr.push(newT); else arr[idx]=newT;
+    db.ref('turnos').set(arr);
+    closeModal(); toast('Guardado');
+  };
+}
+
+/* ---- admin: avisos ---- */
+function adminAvisos(c){
+  const list = DATA.avisos||[];
+  c.innerHTML = `
+    ${list.map((a,i)=>`
+      <div class="admin-item">
+        <div class="admin-item-top">
+          <div style="flex:1;">${a}</div>
+          <div style="display:flex;gap:6px;">
+            <button class="iconbtn" data-edit="${i}">✎</button>
+            <button class="iconbtn del" data-del="${i}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-outline" id="add-aviso">+ Agregar aviso</button>
+  `;
+  c.querySelector('#add-aviso').onclick = ()=> openAvisoModal(null);
+  c.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=> openAvisoModal(parseInt(b.dataset.edit)));
+  c.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const arr = DATA.avisos.slice(); arr.splice(parseInt(b.dataset.del),1);
+    db.ref('avisos').set(arr); toast('Eliminado');
+  });
+}
+function openAvisoModal(idx){
+  const isNew = idx===null;
+  const val = isNew? '' : DATA.avisos[idx];
+  openModal(`
+    <h3>${isNew?'Nuevo aviso':'Editar aviso'}</h3>
+    <div class="form-grid"><textarea id="m-aviso">${val}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const txt = document.getElementById('m-aviso').value;
+    const arr = (DATA.avisos||[]).slice();
+    if(isNew) arr.push(txt); else arr[idx]=txt;
+    db.ref('avisos').set(arr);
+    closeModal(); toast('Guardado');
+  };
+}
+
+/* ---- admin: actividades del mes ---- */
+function adminActividades(c){
+  const list = DATA.actividades||[];
+  c.innerHTML = `
+    ${list.map((a,i)=>`
+      <div class="admin-item">
+        <div class="admin-item-top">
+          <div><span class="tag">${formatFecha(a.fecha)}</span><p class="item-title" style="margin-top:4px;">${a.titulo}</p></div>
+          <div style="display:flex;gap:6px;">
+            <button class="iconbtn" data-edit="${i}">✎</button>
+            <button class="iconbtn del" data-del="${i}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-outline" id="add-act">+ Agregar actividad especial</button>
+  `;
+  c.querySelector('#add-act').onclick = ()=> openActModal(null);
+  c.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=> openActModal(parseInt(b.dataset.edit)));
+  c.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const arr = DATA.actividades.slice(); arr.splice(parseInt(b.dataset.del),1);
+    db.ref('actividades').set(arr); toast('Eliminado');
+  });
+}
+function openActModal(idx){
+  const isNew = idx===null;
+  const a = isNew? {fecha:'',titulo:'',nota:''} : DATA.actividades[idx];
+  openModal(`
+    <h3>${isNew?'Nueva actividad':'Editar actividad'}</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Fecha</label><input id="m-fecha" type="date" value="${a.fecha||''}"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Título</label><input id="m-tit" value="${a.titulo||''}"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Nota</label><textarea id="m-nota">${a.nota||''}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const newA = {
+      fecha: document.getElementById('m-fecha').value,
+      titulo: document.getElementById('m-tit').value,
+      nota: document.getElementById('m-nota').value,
+    };
+    const arr = (DATA.actividades||[]).slice();
+    if(isNew) arr.push(newA); else arr[idx]=newA;
+    db.ref('actividades').set(arr);
+    closeModal(); toast('Guardado');
+  };
+}
+
+/* ---- admin: zonas ---- */
+function adminZonas(c){
+  const list = DATA.zonas||[];
+  c.innerHTML = `
+    <p class="hint" style="margin:0 0 12px;">Estas son las áreas de servicio. Cada una tiene sus "roles" (los puestos a cubrir) y la lista de servidores disponibles para esa zona.</p>
+    ${list.map((z,i)=>`
+      <div class="admin-item">
+        <div class="admin-item-top">
+          <div>
+            <p class="item-title" style="margin:0 0 4px;">${z.nombre}</p>
+            <p class="item-resp" style="margin:0;">Roles: ${(z.roles||[]).join(', ')||'—'}</p>
+            <p class="item-resp" style="margin:0;">${(z.servidores||[]).length} servidores</p>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="iconbtn" data-edit="${i}">✎</button>
+            <button class="iconbtn del" data-del="${i}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-outline" id="add-zona">+ Agregar zona</button>
+  `;
+  c.querySelector('#add-zona').onclick = ()=> openZonaModal(null);
+  c.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=> openZonaModal(parseInt(b.dataset.edit)));
+  c.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const z = DATA.zonas[parseInt(b.dataset.del)];
+    if(!confirm(`¿Eliminar la zona "${z.nombre}"? Se perderán sus servidores y roles guardados.`)) return;
+    const arr = DATA.zonas.slice(); arr.splice(parseInt(b.dataset.del),1);
+    db.ref('zonas').set(arr); toast('Zona eliminada');
+  });
+}
+function slugify(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || ('zona-'+Date.now());
+}
+function openZonaModal(idx){
+  const isNew = idx===null;
+  const z = isNew? {id:'',nombre:'',roles:[],servidores:[]} : DATA.zonas[idx];
+  openModal(`
+    <h3>${isNew?'Nueva zona':'Editar zona'}</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Nombre de la zona</label><input id="m-nombre" value="${z.nombre||''}" placeholder="Ujieres"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Roles (uno por línea)</label><textarea id="m-roles" rows="4">${(z.roles||[]).join('\n')}</textarea></div>
+      <div><label style="font-size:11px;color:var(--gray);">Servidores (uno por línea)</label><textarea id="m-servidores" rows="4">${(z.servidores||[]).join('\n')}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const nombre = document.getElementById('m-nombre').value.trim();
+    if(!nombre){ toast('Escribe un nombre de zona'); return; }
+    const roles = document.getElementById('m-roles').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const servidores = document.getElementById('m-servidores').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const id = isNew? slugify(nombre) : z.id;
+    const nuevaZona = {id, nombre, roles, servidores};
+    const arr = (DATA.zonas||[]).slice();
+    if(isNew) arr.push(nuevaZona); else arr[idx] = nuevaZona;
+    db.ref('zonas').set(arr);
+    closeModal(); toast('Guardado');
+  };
+}
+
+/* ---- admin: cuentas de líderes ---- */
+function adminCuentasLideres(c){
+  const list = DATA.lideresCuentas||[];
+  const zonasPorId = {};
+  (DATA.zonas||[]).forEach(z=> zonasPorId[z.id]=z.nombre);
+  c.innerHTML = `
+    <p class="hint" style="margin:0 0 12px;">Cada líder entra a la pestaña "Líderes" con su propio PIN de 4 dígitos, y solo puede editar las zonas que le asignes aquí (puede tener de 1 a 3 zonas).</p>
+    ${list.map((l,i)=>`
+      <div class="admin-item">
+        <div class="admin-item-top">
+          <div>
+            <p class="item-title" style="margin:0 0 4px;">${l.nombre}</p>
+            <p class="item-resp" style="margin:0 0 4px;">PIN: ${l.pin}</p>
+            <p class="item-resp" style="margin:0;">${(l.zonas||[]).map(zid=> zonasPorId[zid]||zid).join(', ')||'Sin zonas asignadas'}</p>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="iconbtn" data-edit="${i}">✎</button>
+            <button class="iconbtn del" data-del="${i}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-outline" id="add-cuenta">+ Agregar líder</button>
+  `;
+  c.querySelector('#add-cuenta').onclick = ()=> openCuentaLiderModal(null);
+  c.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=> openCuentaLiderModal(parseInt(b.dataset.edit)));
+  c.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const arr = DATA.lideresCuentas.slice(); arr.splice(parseInt(b.dataset.del),1);
+    db.ref('lideresCuentas').set(arr); toast('Líder eliminado');
+  });
+}
+function openCuentaLiderModal(idx){
+  const isNew = idx===null;
+  const l = isNew? {nombre:'',pin:'',zonas:[]} : DATA.lideresCuentas[idx];
+  const zonas = DATA.zonas||[];
+  openModal(`
+    <h3>${isNew?'Nuevo líder':'Editar líder'}</h3>
+    <div class="form-grid">
+      <div><label style="font-size:11px;color:var(--gray);">Nombre</label><input id="m-nombre" value="${l.nombre||''}"></div>
+      <div><label style="font-size:11px;color:var(--gray);">PIN (4 dígitos)</label><input id="m-pin" maxlength="4" value="${l.pin||''}"></div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);">Zonas que lidera (1 a 3)</label>
+        <div class="chip-list" style="margin-top:6px;">
+          ${zonas.map(z=>`
+            <label class="chip" style="cursor:pointer;">
+              <input type="checkbox" value="${z.id}" ${(l.zonas||[]).includes(z.id)?'checked':''} style="width:auto;margin:0;"> ${z.nombre}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const nombre = document.getElementById('m-nombre').value.trim();
+    const pin = document.getElementById('m-pin').value.trim();
+    if(!nombre || pin.length!==4){ toast('Nombre y PIN de 4 dígitos son obligatorios'); return; }
+    const zonasSel = Array.from(document.querySelectorAll('.modal input[type=checkbox]:checked')).map(i=>i.value);
+    if(zonasSel.length>3){ toast('Máximo 3 zonas por líder'); return; }
+    const nuevoLider = {nombre, pin, zonas: zonasSel};
+    const arr = (DATA.lideresCuentas||[]).slice();
+    if(isNew) arr.push(nuevoLider); else arr[idx]=nuevoLider;
+    db.ref('lideresCuentas').set(arr);
+    closeModal(); toast('Guardado');
+  };
+}
+
+/* ---- admin: lideres ---- */
+function adminLideres(c){
+  const list = DATA.lideres.reuniones||[];
+  c.innerHTML = `
+    ${list.map((r,i)=>`
+      <div class="admin-item">
+        <div class="admin-item-top">
+          <div><span class="tag">${r.modalidad==='online'?'Online':'Presencial'}</span> <span class="tag">${formatFecha(r.fecha)}</span>
+          <p class="item-title" style="margin-top:4px;">${r.titulo}</p></div>
+          <div style="display:flex;gap:6px;">
+            <button class="iconbtn" data-edit="${i}">✎</button>
+            <button class="iconbtn del" data-del="${i}">🗑</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn btn-outline" id="add-lider">+ Agregar reunión de líderes</button>
+  `;
+  c.querySelector('#add-lider').onclick = ()=> openLiderModal(null);
+  c.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=> openLiderModal(parseInt(b.dataset.edit)));
+  c.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const arr = DATA.lideres.reuniones.slice(); arr.splice(parseInt(b.dataset.del),1);
+    db.ref('lideres/reuniones').set(arr); toast('Eliminado');
+  });
+}
+function openLiderModal(idx){
+  const isNew = idx===null;
+  const r = isNew? {fecha:'',hora:'',modalidad:'presencial',titulo:'',nota:''} : DATA.lideres.reuniones[idx];
+  openModal(`
+    <h3>${isNew?'Nueva reunión':'Editar reunión'}</h3>
+    <div class="form-grid">
+      <div class="row2">
+        <div><label style="font-size:11px;color:var(--gray);">Fecha</label><input id="m-fecha" type="date" value="${r.fecha||''}"></div>
+        <div><label style="font-size:11px;color:var(--gray);">Hora</label><input id="m-hora" value="${r.hora||''}" placeholder="20:00"></div>
+      </div>
+      <div><label style="font-size:11px;color:var(--gray);">Modalidad</label>
+        <select id="m-mod">
+          <option value="presencial" ${r.modalidad==='presencial'?'selected':''}>Presencial</option>
+          <option value="online" ${r.modalidad==='online'?'selected':''}>Online</option>
+        </select>
+      </div>
+      <div><label style="font-size:11px;color:var(--gray);">Título</label><input id="m-tit" value="${r.titulo||''}"></div>
+      <div><label style="font-size:11px;color:var(--gray);">Nota</label><textarea id="m-nota">${r.nota||''}</textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="m-cancel">Cancelar</button>
+      <button class="btn" id="m-save">Guardar</button>
+    </div>
+  `);
+  document.getElementById('m-cancel').onclick = closeModal;
+  document.getElementById('m-save').onclick = ()=>{
+    const newR = {
+      fecha: document.getElementById('m-fecha').value,
+      hora: document.getElementById('m-hora').value,
+      modalidad: document.getElementById('m-mod').value,
+      titulo: document.getElementById('m-tit').value,
+      nota: document.getElementById('m-nota').value,
+    };
+    const arr = (DATA.lideres.reuniones||[]).slice();
+    if(isNew) arr.push(newR); else arr[idx]=newR;
+    db.ref('lideres/reuniones').set(arr);
+    closeModal(); toast('Guardado');
+  };
+}
+
+/* ---- admin: config ---- */
+function adminConfig(c){
+  const diasNombres = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  c.innerHTML = `
+    <div class="card">
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Nombre de la iglesia</label><input id="cfg-name" value="${DATA.config.churchName||''}"></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="tag" style="margin-bottom:8px;">Para servidores (~50 personas)</p>
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Clave de entrada general</label><input id="cfg-access" maxlength="4" value="${DATA.config.accessPin||''}"></div>
+      </div>
+      <p style="font-size:11px;color:var(--gray-dim);margin:0;">Es la clave que se pide al abrir la app por primera vez en cada dispositivo.</p>
+    </div>
+    <div class="card">
+      <p class="tag" style="margin-bottom:8px;">Para pastores (acceso total a Líderes)</p>
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Clave general de Líderes</label><input id="cfg-leader" maxlength="4" value="${DATA.config.leaderPin||''}"></div>
+        <div><label style="font-size:11px;color:var(--gray);">Texto de pastores (se ve arriba en Líderes)</label><input id="cfg-pastores" value="${DATA.config.pastoresBase||''}"></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="tag" style="margin-bottom:8px;">Turno mensual</p>
+      <div class="form-grid">
+        <div>
+          <label style="font-size:11px;color:var(--gray);">Días sugeridos por defecto al generar turnos</label>
+          <div class="chip-list" style="margin-top:6px;">
+            ${diasNombres.map((nombre,i)=>`
+              <label class="chip" style="cursor:pointer;">
+                <input type="checkbox" value="${i}" id="cfg-dia-${i}" ${(DATA.config.diasTurnoDefault||[]).includes(i)?'checked':''} style="width:auto;margin:0;"> ${nombre}
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="tag" style="margin-bottom:8px;">Para pastores</p>
+      <div class="form-grid">
+        <div><label style="font-size:11px;color:var(--gray);">Clave de Admin</label><input id="cfg-pin" maxlength="4" value="${DATA.config.pin||''}"></div>
+      </div>
+    </div>
+    <button class="btn" id="cfg-save">Guardar ajustes</button>
+    <div class="card" style="margin-top:14px;">
+      <p style="font-size:12px;color:var(--gray);margin:0 0 10px;">URL de Firebase conectada:</p>
+      <p style="font-size:12px;word-break:break-all;color:var(--gray-dim);margin:0 0 12px;">${cfg.url}</p>
+      <button class="btn btn-outline" id="cfg-disconnect">Cerrar acceso en este dispositivo</button>
+    </div>
+  `;
+  document.getElementById('cfg-save').onclick = ()=>{
+    const name = document.getElementById('cfg-name').value;
+    const accessPin = document.getElementById('cfg-access').value || '1234';
+    const leaderPin = document.getElementById('cfg-leader').value || '1234';
+    const pin = document.getElementById('cfg-pin').value || '1234';
+    const pastoresBase = document.getElementById('cfg-pastores').value || 'Pastores';
+    const diasTurnoDefault = diasNombres.map((_,i)=>i).filter(i=> document.getElementById('cfg-dia-'+i).checked);
+    db.ref('config').set({ churchName: name, accessPin, leaderPin, pin, pastoresBase, diasTurnoDefault });
+    toast('Ajustes guardados');
+  };
+  document.getElementById('cfg-disconnect').onclick = async ()=>{
+    await localSet('firebase-config', null);
+    await localSet('access-unlocked', null);
+    location.reload();
+  };
+}
+
+/* ============== MODAL helper ============== */
+function openModal(html){
+  let bg = document.getElementById('modal-bg');
+  if(!bg){
+    bg = document.createElement('div');
+    bg.id = 'modal-bg';
+    bg.className = 'modal-bg';
+    document.body.appendChild(bg);
+  }
+  bg.innerHTML = `<div class="modal">${html}</div>`;
+  bg.style.display = 'flex';
+  bg.onclick = (e)=>{ if(e.target===bg) closeModal(); };
+}
+function closeModal(){
+  const bg = document.getElementById('modal-bg');
+  if(bg) bg.style.display = 'none';
+}
+</script>
+</body>
+</html>
